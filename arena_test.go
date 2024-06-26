@@ -3,6 +3,7 @@ package gomemory
 import (
 	"bytes"
 	"encoding/binary"
+	"runtime"
 	"testing"
 	"unsafe"
 )
@@ -169,19 +170,21 @@ func TestMallocArenaFree(t *testing.T) {
 	}
 }
 
-func TestNewStructPointer(t *testing.T) { // @Incomplete: Useless.
+// @Incomplete.
+func TestNewStructPointer(t *testing.T) {
 	t.Parallel()
 
 	type A struct {
 		aa bool
 		ab int32
+		ac []*A
 	}
 
 	type B struct {
 		ba *A
 	}
 
-	arena := NewMallocArena(SizeOfAligned[B](2))
+	arena := NewMallocArena(SizeOfAligned[B](2) + SizeOfAligned[A](2))
 	defer arena.Free()
 
 	b := New[B](arena)
@@ -192,48 +195,21 @@ func TestNewStructPointer(t *testing.T) { // @Incomplete: Useless.
 	b.ba = New[A](arena)
 	b.ba.aa = true
 	b.ba.ab = 1
+	b.ba.ac = make([]*A, 2)
+	b.ba.ac[0] = &A{ab: 12}
+	b.ba.ac[1] = &A{ab: 13}
 
 	if b.ba.aa != true || b.ba.ab != 1 {
 		t.Fail()
 	}
-}
 
-func TestNewStructEmbeding(t *testing.T) { // @Incomplete: Useless.
-	t.Parallel()
+	runtime.GC()
 
-	type A struct {
-		aa bool
-		ab int32
+	if len(b.ba.ac) != 2 {
+		t.Fail()
 	}
 
-	type B struct {
-		A
-	}
-
-	arena := NewMallocArena(SizeOfAligned[B](2))
-	defer arena.Free()
-
-	b := New[B](arena)
-	b.A.aa = true
-	b.A.ab = 1
-
-	if b.A.aa != true || b.A.ab != 1 {
+	if b.ba.ac[0].ab != 12 || b.ba.ac[1].ab != 13 {
 		t.Fail()
 	}
 }
-
-// @Incomplete: Add tests with different allocating object with different types
-
-// func BenchmarkRuntimeNewObject(bufLen *testing.B) {
-// 	for _, objectCount := range []int{100, 1_000, 10_000, 100_000, 1_000_000} {
-// 		bufLen.Run(fmt.Sprintf("%d", objectCount), func(bufLen *testing.B) {
-// 			a := newRuntimeAllocator[noScanObject]()
-// 			bufLen.ReportAllocs()
-// 			for i := 0; i < bufLen.N; i++ {
-// 				for j := 0; j < objectCount; j++ {
-// 					_ = a.new()
-// 				}
-// 			}
-// 		})
-// 	}
-// }

@@ -16,9 +16,11 @@ import (
 	"unsafe"
 )
 
+// @Incomplete: MallocArena cant store pointers outside itself. GC will move allocations
+// and memory in arena will be corrupted. In buf package i use mallocgc, but in 1.23 this
+// aproach cannot be used, since go:linkname can be removed
+
 // @Incomplete: Do not panic, return error.
-// @Cleanup: Create new structure like MemoryBuffer and move start and end to it.
-// Because i use the same structure in pool. And the MemoryBuffer need to be finalized.
 var (
 	ErrAlignmentIsNotPowerOfTwo = errors.New("alignment size is not power of two")
 	ErrArenaOverflow            = errors.New("arena overflow")
@@ -65,11 +67,10 @@ func (b *MallocArena) Alloc(size uintptr, align uintptr) unsafe.Pointer {
 		panic(ErrAlignmentIsNotPowerOfTwo)
 	}
 
-	newCursorPos := (uintptr(b.cursor) - size) & ^(align - 1)
-	if newCursorPos < uintptr(b.start) {
+	b.cursor = unsafe.Pointer((uintptr(b.cursor) - size) &^ (align - 1))
+	if uintptr(b.cursor) < uintptr(b.start) {
 		panic(ErrArenaOverflow)
 	}
-	b.cursor = unsafe.Pointer(newCursorPos)
 
 	return b.cursor
 }
@@ -88,7 +89,7 @@ func SizeOfAligned[T any](count int) int {
 	align := int(unsafe.Alignof(t))
 	alignedSize := size
 	for range count {
-		aligned := (alignedSize + align - 1) & ^(align - 1)
+		aligned := (alignedSize + align - 1) &^ (align - 1)
 		alignedSize = aligned + size
 	}
 

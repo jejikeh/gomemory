@@ -5,13 +5,13 @@ import (
 	"unsafe"
 )
 
-const bitsInByte = 4
-
-var ErrBitSetOverflow = errors.New("bitset overflow")
-
 type Int interface {
 	~int | ~uint | ~int8 | ~uint8 | ~int16 | ~uint16 | ~int32 | ~uint32 | ~int64 | ~uint64
 }
+
+const bitsInByte = 4
+
+var ErrBitSetOverflow = errors.New("bitset overflow")
 
 type BitSet[T Int] struct {
 	bits T
@@ -28,12 +28,12 @@ func NewBitSet[T Int](values ...T) *BitSet[T] {
 }
 
 func (b *BitSet[T]) Set(v T) {
-	checkBitOverflow[T](v)
+	checkBitOverflow(v)
 	b.bits |= 1 << v
 }
 
 func (b *BitSet[T]) Has(v T) bool {
-	checkBitOverflow[T](v)
+	checkBitOverflow(v)
 
 	return b.bits&(1<<v) != 0
 }
@@ -43,7 +43,7 @@ func (b *BitSet[T]) Check(mask *BitSet[T]) bool {
 }
 
 func (b *BitSet[T]) Unset(v T) {
-	checkBitOverflow[T](v)
+	checkBitOverflow(v)
 
 	b.bits &= ^(1 << v)
 }
