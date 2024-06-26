@@ -1,4 +1,4 @@
-package gomemory
+package bitset
 
 import (
 	"errors"

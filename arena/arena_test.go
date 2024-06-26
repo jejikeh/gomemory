@@ -1,4 +1,4 @@
-package gomemory
+package arena
 
 import (
 	"bytes"

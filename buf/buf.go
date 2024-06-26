@@ -9,7 +9,7 @@ import (
 var ErrBufOverflow = errors.New("buffer overflow")
 
 //go:linkname runtime_mallocgc runtime.mallocgc
-func runtime_mallocgc(size uintptr, typ uintptr, needzero bool) unsafe.Pointer
+func runtime_mallocgc(size uintptr, typeid uintptr, needzero bool) unsafe.Pointer
 
 type Buf[T any] struct {
 	mem   []T
@@ -18,6 +18,21 @@ type Buf[T any] struct {
 }
 
 func New[T any](count int, ts ...T) *Buf[T] {
+	var t T
+	if len(ts) > 0 {
+		t = ts[0]
+	} else {
+		t = *new(T)
+	}
+
+	return &Buf[T]{
+		mem:   make([]T, count),
+		tType: runtimeTypeOf(t),
+		index: 0,
+	}
+}
+
+func NewMallocGC[T any](count int, ts ...T) *Buf[T] {
 	var t T
 	if len(ts) > 0 {
 		t = ts[0]

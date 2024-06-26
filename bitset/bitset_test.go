@@ -1,4 +1,4 @@
-package gomemory
+package bitset
 
 import (
 	"math/rand/v2"
@@ -45,8 +45,8 @@ func TestBitSetClear(t *testing.T) {
 func TestComposeNewBitSet(t *testing.T) {
 	t.Parallel()
 
-	b := NewBitSet[int](3)
-	mask := NewBitSet[int](1, 3, 7)
+	b := NewBitSet(3)
+	mask := NewBitSet(1, 3, 7)
 
 	if b.Check(mask) {
 		t.Errorf("[%s] is not valid for mask [%s]", strconv.FormatInt(int64(b.bits), 2), strconv.FormatInt(int64(mask.bits), 2))
